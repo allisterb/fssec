@@ -38,7 +38,6 @@ public abstract class AuditFileSystemInfo : IFileSystemInfo
 
         else
         {
-
             this.AuditEnvironment.Debug(caller, "The command {0} {1} did not execute successfully. Output: {1}", command, args, process_output + process_error);
             return string.Empty;
         }

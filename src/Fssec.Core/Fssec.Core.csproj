@@ -8,10 +8,13 @@
 
   <ItemGroup>
     <PackageReference Include="Alpheus" Version="0.6.0.1" />
+    <PackageReference Include="System.Management" Version="6.0.0" />
+    <PackageReference Include="System.Management.Automation" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\ext\Expect.NET\Expect.NET\Expect.NETStandard.csproj" />
+    <ProjectReference Include="..\Fssec.Base\Fssec.Base.csproj" />
   </ItemGroup>
 
 </Project>

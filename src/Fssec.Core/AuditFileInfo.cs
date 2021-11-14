@@ -4,11 +4,9 @@ namespace Fssec;
 public abstract class AuditFileInfo : AuditFileSystemInfo, IFileInfo
 {
     #region Constructors
-    public AuditFileInfo(AuditEnvironment env, string file_path)
+    public AuditFileInfo(AuditEnvironment env, string file_path) : base(env)
     {
-        this.AuditEnvironment = env;
         this.FullName = file_path;
-        this.PathSeparator = this.AuditEnvironment.OS.Platform == PlatformID.Win32NT ? "\\" : "/";
         this.Name = this.GetPathComponents().Last();
     }
     #endregion
@@ -28,8 +26,6 @@ public abstract class AuditFileInfo : AuditFileSystemInfo, IFileInfo
     public abstract LocalAuditFileInfo GetAsLocalFile();
     public abstract Task<LocalAuditFileInfo> GetAsLocalFileAsync();
     #endregion
-
-
 
     #region Methods
     public IFileInfo Create(string file_path)

@@ -1,52 +1,10 @@
-﻿using Alpheus.IO;
-namespace Fssec;
+﻿namespace Fssec;
 
-#region Types
-public enum EventMessageType
-{
-    SUCCESS = 0,
-    ERROR = 1,
-    INFO = 2,
-    WARNING = 3,
-    STATUS = 4,
-    PROGRESS = 5,
-    DEBUG = 6,
-}
-
-public struct CallerInformation
-{
-    public string Name;
-    public string File;
-    public int LineNumber;
-
-    public CallerInformation(string name, string file, int line_number)
-    {
-        this.Name = name;
-        this.File = file;
-        this.LineNumber = line_number;
-    }
-}
-
-public struct OperationProgress
-{
-    public string Operation;
-    public int Total;
-    public int Complete;
-    public TimeSpan? Time;
-
-    public OperationProgress(string op, int total, int complete, TimeSpan? time)
-    {
-        this.Operation = op;
-        this.Total = total;
-        this.Complete = complete;
-        this.Time = time;
-    }
-}
-#endregion
+using System.Security;
 
 public abstract class AuditEnvironment : IDisposable
 {
-    #region Types
+    #region Enums
     public enum ProcessExecuteStatus
     {
         Unknown = -99,
@@ -57,7 +15,7 @@ public abstract class AuditEnvironment : IDisposable
     #endregion
 
     #region Constructors
-    public AuditEnvironment(EventHandler<EnvironmentEventArgs> message_handler, OperatingSystem os, LocalEnvironment host_environment)
+    public AuditEnvironment(EventHandler<EnvironmentEventArgs>? message_handler, OperatingSystem os, LocalEnvironment? host_environment)
     {
         this.OS = os;
         if (OS.Platform == PlatformID.Win32NT)
@@ -76,9 +34,9 @@ public abstract class AuditEnvironment : IDisposable
     #endregion
 
     #region Events
-    public event EventHandler<EnvironmentEventArgs> MessageHandler;
-    public event EventHandler<DataReceivedEventArgs> OutputDataReceivedHandler;
-    public event EventHandler<DataReceivedEventArgs> ErrorDataReceivedHandler;
+    public event EventHandler<EnvironmentEventArgs>? MessageHandler;
+    public event EventHandler<DataReceivedEventArgs>? OutputDataReceivedHandler;
+    public event EventHandler<DataReceivedEventArgs>? ErrorDataReceivedHandler;
 
     protected virtual void OnMessage(EnvironmentEventArgs e)
     {
@@ -111,10 +69,10 @@ public abstract class AuditEnvironment : IDisposable
     public abstract bool FileExists(string file_path);
     public abstract bool DirectoryExists(string dir_path);
     public abstract bool Execute(string command, string arguments,
-        out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string> EnvironmentVariables = null,
-        Action<string> OutputDataReceived = null, Action<string> OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
+        out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string>? EnvironmentVariables = null,
+        Action<string>? OutputDataReceived = null, Action<string>? OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
     public abstract bool ExecuteAsUser(string command, string arguments,
-        out ProcessExecuteStatus process_status, out string process_output, out string process_error, string user, SecureString password, Action<string> OutputDataReceived = null, Action<string> OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
+        out ProcessExecuteStatus process_status, out string process_output, out string process_error, string user, SecureString password, Action<string>? OutputDataReceived = null, Action<string>? OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0);
     public abstract AuditFileInfo ConstructFile(string file_path);
     public abstract AuditDirectoryInfo ConstructDirectory(string dir_path);
     public abstract Dictionary<AuditFileInfo, string> ReadFilesAsText(List<AuditFileInfo> files);
@@ -173,17 +131,17 @@ public abstract class AuditEnvironment : IDisposable
 
     public OperatingSystem OS { get; protected set; }
 
-    public string OSName { get; set; }
+    public string OSName { get; set; } = "";
 
-    public string OSVersion { get; set; }
+    public string OSVersion { get; set; } = "";
 
-    public Dictionary<string, string> OSEnvironmentVars { get; protected set; }
+    public Dictionary<string, string> OSEnvironmentVars { get; protected set; } = new Dictionary<string, string>();
 
-    public List<ProcessInfo> OSProcesses { get; protected set; }
+    public List<ProcessInfo> OSProcesses { get; protected set; } = new List<ProcessInfo>();
 
-    public LocalEnvironment HostEnvironment { get; protected set; }
+    public LocalEnvironment? HostEnvironment { get; protected set; }
 
-    public DirectoryInfo WorkDirectory { get; protected set; }
+    public DirectoryInfo? WorkDirectory { get; protected set; }
 
     protected StringBuilder ProcessOutputSB = new StringBuilder();
 
@@ -407,12 +365,11 @@ public abstract class AuditEnvironment : IDisposable
             }
             else if (this.OSName == "oraclelinux")
             {
-                string output;
                 cmd = "cat";
                 args = "/etc/oracle-release";
-                if (this.ExecuteCommand(cmd, args, out output, false) && !string.IsNullOrEmpty(output))
+                if (this.ExecuteCommand(cmd, args, out string output, false) && !string.IsNullOrEmpty(output))
                 {
-                    version = output.Replace("Oracle Linux Server release ", string.Empty).Split('.').FirstOrDefault();
+                    version = output?.Replace("Oracle Linux Server release ", string.Empty).Split('.').FirstOrDefault() ?? "";
                 }
                 else
                 {
@@ -639,7 +596,7 @@ public abstract class AuditEnvironment : IDisposable
                 if (!lines[0].StartsWith("USER"))
                 {
                     this.Error("Could not parse output of ps command.");
-                    return null;
+                    return new List<ProcessInfo>();
                 }
                 List<ProcessInfo> p = new List<ProcessInfo>(lines.Length - 1);
                 for (int i = 1; i < lines.Length; i++)
@@ -695,7 +652,7 @@ public abstract class AuditEnvironment : IDisposable
             else
             {
                 this.Error("Could not get environment variables. Error: {0}", output);
-                return null;
+                return EmptyDict<string, string>();
             }
         }
         else
@@ -721,8 +678,7 @@ public abstract class AuditEnvironment : IDisposable
 
     public string ToInsecureString(object o)
     {
-        SecureString s = o as SecureString;
-        if (s == null) throw new ArgumentException("Object is not of type SecureString.", "o");
+        SecureString s = o as SecureString ?? throw new ArgumentException("Object is not of type SecureString.", "o");
         string r = string.Empty;
         IntPtr ptr = Marshal.SecureStringToBSTR(s);
         try

@@ -1,15 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Management.Automation;
-using System.Management.Automation.Runspaces;
-using System.Runtime.CompilerServices;
+﻿using System.ComponentModel;
 using System.Security;
-using System.Text;
-using System.Threading.Tasks;
 
 using ExpectNet;
 
@@ -20,7 +10,7 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
     #region Constructors
     public LocalEnvironment(EventHandler<EnvironmentEventArgs> message_handler) : base(message_handler, Environment.OSVersion, null)
     {
-        this.ScriptEnvironment = new ScriptEnvironment(this);
+        
     }
     public LocalEnvironment() : base(null, Environment.OSVersion, null) { }
     #endregion
@@ -52,8 +42,8 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
     }
 
     public override bool Execute(string command, string arguments, 
-        out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string> env = null,
-        Action<string> OutputDataReceived = null, Action<string> OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+        out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string>? env = null,
+        Action<string>? OutputDataReceived = null, Action<string>? OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation caller = new CallerInformation(memberName, fileName, lineNumber);
         FileInfo cf = new FileInfo(command);
@@ -66,7 +56,7 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         psi.RedirectStandardError = true;
         psi.RedirectStandardOutput = true;
         psi.UseShellExecute = false;
-        if (env != null && env.Count > 0)
+        if (env is not null && env.Any())
         {
             foreach(KeyValuePair<string, string> kv in env)
             {
@@ -75,7 +65,7 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         }
         if (cf.Exists)
         {
-            psi.WorkingDirectory = cf.Directory.FullName;
+            psi.WorkingDirectory = cf.Directory?.FullName ?? string.Empty;
         }
         Process p = new Process();
         p.EnableRaisingEvents = true;
@@ -150,7 +140,7 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         }
     }
 
-    public override bool ExecuteAsUser(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, string user, SecureString password, Action<string> OutputDataReceived = null, Action<string> OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+    public override bool ExecuteAsUser(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, string user, SecureString password, Action<string>? OutputDataReceived = null, Action<string>? OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation caller = new CallerInformation(memberName, fileName, lineNumber);
         if (this.OS.Platform == PlatformID.Win32NT)
@@ -178,7 +168,7 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
             psi.UseShellExecute = false;
             if (cf.Exists)
             {
-                psi.WorkingDirectory = cf.Directory.FullName;
+                psi.WorkingDirectory = cf.Directory?.FullName ?? "";
             }
             Process p = new Process();
             p.EnableRaisingEvents = true;
@@ -373,8 +363,8 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         object results_lock = new object();
         Parallel.ForEach(files, new ParallelOptions() { MaxDegreeOfParallelism = 20 }, (_f, state) =>
         {
-            LocalAuditFileInfo _lf = _f as LocalAuditFileInfo;
-            string text = _lf.ReadAsText();
+            LocalAuditFileInfo? _lf = _f as LocalAuditFileInfo;
+            string text = _lf?.ReadAsText() ?? "";
             if (text != string.Empty)
             {
                 lock (results_lock)
@@ -391,7 +381,6 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
     #endregion
 
     #region Properties
-    public ScriptEnvironment ScriptEnvironment { get; protected set; }
     public bool IsDockerContainer { get; internal set; }
     #endregion
 

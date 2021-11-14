@@ -4,46 +4,16 @@ namespace Fssec;
 
 public class LocalAuditFileInfo : AuditFileInfo
 {
-    #region Constructors
-    public LocalAuditFileInfo(LocalEnvironment env, string file_path) : base(env, file_path)
-    {
-        this.LocalAuditEnvironment = env;
-        this.file = new FileInfo(file_path);
-        this.Name = this.file.Name;
-        this.FullName = this.file.FullName;
-    }
-
-    public LocalAuditFileInfo(LocalEnvironment env, FileInfo f) : base(env, f.FullName)
-    {
-        this.LocalAuditEnvironment = env;
-        this.file = f;
-        this.Name = this.file.Name;
-        this.FullName = this.file.FullName;
-    }
-    #endregion
-
     #region Overriden properties
-    public override IDirectoryInfo Directory
-    {
-        get
-        {
-            return new LocalDirectoryInfo(this.file.Directory);
-        }
-    }
-
-    public override string? DirectoryName
-    {
-        get
-        {
-            return this.file.DirectoryName;
-        }
-    }
-
+    public override IDirectoryInfo Directory => new LocalDirectoryInfo(this.File.Directory);
+    
+    public override string DirectoryName => this.File.DirectoryName ?? throw new Exception($"Directory name for file {File.Name} is null.");
+    
     public override bool Exists
     {
         get
         {
-            return this.file.Exists;
+            return this.File.Exists;
         }
     }
 
@@ -51,7 +21,7 @@ public class LocalAuditFileInfo : AuditFileInfo
     {
         get
         {
-            return this.file.Length;
+            return this.File.Length;
         }
     }
 
@@ -59,7 +29,7 @@ public class LocalAuditFileInfo : AuditFileInfo
     {
         get
         {
-            return this.file.IsReadOnly;
+            return this.File.IsReadOnly;
         }
     }
 
@@ -73,20 +43,20 @@ public class LocalAuditFileInfo : AuditFileInfo
     {
         get
         {
-            return this.file.LastAccessTimeUtc;
+            return this.File.LastAccessTimeUtc;
         }
     }
 
     public override bool PathExists(string file_path)
     {
-        return File.Exists(file_path);
+        return System.IO.File.Exists(file_path);
     }
     #endregion
 
     #region Overriden methods
     public override string ReadAsText()
     {
-        using (StreamReader s = new StreamReader(this.file.OpenRead()))
+        using (StreamReader s = new StreamReader(this.File.OpenRead()))
         {
             return s.ReadToEnd();
         }
@@ -94,9 +64,9 @@ public class LocalAuditFileInfo : AuditFileInfo
 
     public override byte[] ReadAsBinary()
     {
-        using (FileStream s = this.file.Open(FileMode.Open, FileAccess.Read))
+        using (FileStream s = this.File.Open(FileMode.Open, FileAccess.Read))
         {
-            byte[] buffer = new byte[this.file.Length];
+            byte[] buffer = new byte[this.File.Length];
             s.Read(buffer, 0, buffer.Length);
             return buffer;
         }
@@ -113,18 +83,36 @@ public class LocalAuditFileInfo : AuditFileInfo
     }
     #endregion
 
+    #region Constructors
+    public LocalAuditFileInfo(LocalEnvironment env, string file_path) : base(env, file_path)
+    {
+        this.LocalAuditEnvironment = env;
+        this.File = new FileInfo(file_path);
+        this.Name = this.File.Name;
+        this.FullName = this.File.FullName;
+    }
+
+    public LocalAuditFileInfo(LocalEnvironment env, FileInfo f) : base(env, f.FullName)
+    {
+        this.LocalAuditEnvironment = env;
+        this.File = f;
+        this.Name = this.File.Name;
+        this.FullName = this.File.FullName;
+    }
+    #endregion
+
     #region Properties
     public FileInfo SysFile
     {
         get
         {
-            return this.file;
+            return this.File;
         }
     }
     #endregion
 
     #region Fields
-    private FileInfo file;
+    private FileInfo File;
     private LocalEnvironment LocalAuditEnvironment { get; set; }
     #endregion
 }
