@@ -1,3 +1,6 @@
 [submodule "ext/Expect.NET"]
 	path = ext/Expect.NET
 	url = https://github.com/allisterb/Expect.NET
+[submodule "ext/SSH.NET"]
+	path = ext/SSH.NET
+	url = https://github.com/allisterb/SSH.NET.git
