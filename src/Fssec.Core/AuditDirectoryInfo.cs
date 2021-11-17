@@ -23,7 +23,7 @@ public abstract class AuditDirectoryInfo : AuditFileSystemInfo, IDirectoryInfo
     public abstract IDirectoryInfo[] GetDirectories(string search_pattern, SearchOption search_option);
     public abstract IFileInfo[] GetFiles();
     public abstract IFileInfo[] GetFiles(string searchPattern);
-    public abstract AuditFileInfo GetFile(string file_path);
+    public abstract AuditFileInfo? GetFile(string file_path);
     public abstract Dictionary<AuditFileInfo, string> ReadFilesAsText(string searchPattern);
     public abstract Task<Dictionary<AuditFileInfo, string>> ReadFilesAsTextAsync(string searchPattern);
     public abstract Dictionary<AuditFileInfo, string> ReadFilesAsText(IEnumerable<AuditFileInfo> files);

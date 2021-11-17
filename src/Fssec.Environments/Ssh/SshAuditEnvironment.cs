@@ -1,4 +1,5 @@
 ﻿namespace Fssec;
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,10 +26,10 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         : base(message_handler, os, host_environment)
     {
         ConnectionInfo ci;
-        Info("Connecting to {0}:{1}...", host_name, port);
+        Info("Connecting to {0}:{1}...", host_name ?? throw new Exception(), port);
         if (string.IsNullOrEmpty(keyfile))
         {
-            ci = new ConnectionInfo(host_name, port, user, new PasswordAuthenticationMethod(user, ToInsecureString(pass)));
+            ci = new ConnectionInfo(host_name, port, user, new PasswordAuthenticationMethod(user, ToInsecureString(pass ?? throw new ArgumentNullException())));
         }
         else if (!string.IsNullOrEmpty(keyfile) && pass != null)
         {
@@ -78,7 +79,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         this.HostName = host_name;
         this.ssh_client_pass = pass;
         Success("Connected to {0} in {1} ms.", host_name, sw.ElapsedMilliseconds);
-        string tmp_dir = Environment.OSVersion.Platform == PlatformID.Win32NT ? Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.User) : "/tmp";
+        string tmp_dir = Environment.OSVersion.Platform == PlatformID.Win32NT ? Environment.GetEnvironmentVariable("TEMP", EnvironmentVariableTarget.User) ?? "C:\\Windows\\Temp" : "/tmp";
         if (!string.IsNullOrEmpty(tmp_dir) && Directory.Exists(tmp_dir))
         {
             this.WorkDirectory = new DirectoryInfo(Path.Combine(tmp_dir, "devaudit-work", this.GetTimestamp()));
@@ -152,8 +153,8 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         }            
     }
 
-    public override bool Execute(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string> env = null,
-        Action<string> OutputDataReceived = null, Action<string> OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+    public override bool Execute(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string>? env = null,
+        Action<string>? OutputDataReceived = null, Action<string>? OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation caller = new CallerInformation(memberName, fileName, lineNumber);
         if (!this.IsConnected) throw new InvalidOperationException("The SSH session is not connected.");
@@ -176,7 +177,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         CommandAsyncResult result;
         try
         {
-            result = cmd.BeginExecute(new AsyncCallback(SshCommandAsyncCallback), new KeyValuePair<SshCommand, Stopwatch>(cmd, cs)) as CommandAsyncResult;
+            result = (CommandAsyncResult) cmd.BeginExecute(new AsyncCallback(SshCommandAsyncCallback), new KeyValuePair<SshCommand, Stopwatch>(cmd, cs));
             cmd.EndExecute(result);
         }
         catch (SshConnectionException sce)
@@ -221,7 +222,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         }
     }
 
-    public override bool ExecuteAsUser(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, string user, SecureString password, Action<string> OutputDataReceived = null, Action<string> OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+    public override bool ExecuteAsUser(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, string user, SecureString password, Action<string>? OutputDataReceived = null, Action<string>? OutputErrorReceived = null, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation caller = new CallerInformation(memberName, fileName, lineNumber);
         if (!this.IsConnected) throw new InvalidOperationException("The SSH session is not connected.");
@@ -310,7 +311,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
             SshCommand cmd = this.SshClient.CreateCommand(_c.Item1 + " " + _c.Item2);
             Stopwatch cs = new Stopwatch();
             cs.Start();
-            CommandAsyncResult result = cmd.BeginExecute(new AsyncCallback(SshCommandAsyncCallback), new KeyValuePair<SshCommand, Stopwatch>(cmd, cs)) as CommandAsyncResult;
+            CommandAsyncResult result = (CommandAsyncResult) cmd.BeginExecute(new AsyncCallback(SshCommandAsyncCallback), new KeyValuePair<SshCommand, Stopwatch>(cmd, cs));
             cmd.EndExecute(result);
             KeyValuePair<SshCommand, Stopwatch> s = (KeyValuePair<SshCommand, Stopwatch>) result.AsyncState;
             process_output = s.Key.Result.Trim();
@@ -348,7 +349,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
             SshCommand cmd = this.SshClient.CreateCommand("cat " + _f.FullName);
             Stopwatch cs = new Stopwatch();
             cs.Start();
-            CommandAsyncResult result = cmd.BeginExecute(new AsyncCallback(SshCommandAsyncCallback), new KeyValuePair<SshCommand, Stopwatch> (cmd, cs)) as CommandAsyncResult;
+            CommandAsyncResult result = (CommandAsyncResult) cmd.BeginExecute(new AsyncCallback(SshCommandAsyncCallback), new KeyValuePair<SshCommand, Stopwatch> (cmd, cs));
             cmd.EndExecute(result); 
             KeyValuePair<SshCommand, Stopwatch> s = (KeyValuePair<SshCommand, Stopwatch>) result.AsyncState;
             if (s.Key.Result != string.Empty)
@@ -366,7 +367,6 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
                 Error(here, "Could not read {0} as text. Command returned: {1}", _f.FullName, s.Key.Error);
             }
             s.Key.Dispose();
-            cs = null;
         });
         sw.Stop();
         Success("Read text for {0} out of {1} files in {2} ms.", results.Count(r => r.Value.Length > 0), results.Count(), sw.ElapsedMilliseconds);
@@ -377,13 +377,13 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
     #endregion
 
     #region Properties
-    public string HostName { get; private set; }
-    public string User { get; private set; }
-    public bool UsePageant { get; private set; }
-    public bool UseSshAgent { get; private set; }
-    public string HostKey { get; private set; }
+    public string HostName { get; private set; } = "";
+    public string User { get; private set; } = "";
+    public bool? UsePageant { get; private set; }
+    public bool? UseSshAgent { get; private set; }
+    public string? HostKey { get; private set; }
     public bool IsConnected { get; private set; }
-    public string LastEvent { get; set; }
+    public string? LastEvent { get; set; }
     public TimeSpan NetworkConnectTimeout { get; private set; } = new TimeSpan(0, 0, 5);
     #endregion
 
@@ -393,9 +393,8 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         CallerInformation here = this.Here();
         Stopwatch sw = new Stopwatch();
         sw.Start();
-        ScpClient c = this.CreateScpClient();
+        ScpClient c = this.CreateScpClient() ?? throw new InvalidOperationException("Could not create SCP client.");
         c.BufferSize = 16 * 16384;
-        if (c == null) return null;
         try
         {
             FileInfo f = new FileInfo(local_path);
@@ -409,7 +408,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         {
             Error("Exception thrown attempting to download file {0} from {1} to {2} via SCP.", remote_path, this.HostName, remote_path);
             Error(here, e);
-            return null;
+            throw new Exception($"Could not get remote path {remote_path} as local path {local_path}.");
         }
         finally
         {
@@ -425,34 +424,30 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         string dir_archive_filename = string.Format("_devaudit_{0}.tgz", this.GetTimestamp());
         SshCommandSpawanble cs = new SshCommandSpawanble(this.SshClient.CreateCommand(string.Format("tar -czf {0} -C {1} . && stat {0} || echo Failed", dir_archive_filename, remote_path)));
         sw.Start();
-        ExpectNet.Session cmd_session = Expect.Spawn(cs, this.LineTerminator);
+        ExpectNet.Session cmd_session = Expect.Spawn(cs, this.LineTerminator, this.CancellationToken);
         List<IResult> r = cmd_session.Expect.RegexEither("Size:\\s+([0-9]+)", null, "Failed", null);
         sw.Stop();
         long dir_archive_size;
         cs.Dispose();
         if (r[0].IsMatch)
         {
-            Match m = r[0].Result as Match;
+            System.Text.RegularExpressions.Match m = r[0].Result as System.Text.RegularExpressions.Match ?? throw new InvalidCastException($"Could not convert IResult {r[0].Result} to Match.");
             dir_archive_size = long.Parse(m.Groups[1].Value);
             Debug(here, "Archive file {0} created with size {1} bytes in {2} ms.", dir_archive_filename, dir_archive_size, sw.ElapsedMilliseconds);
         }
         else
         {
             Error(here, "Archive file {0} could not be created, command output: {1}", dir_archive_filename, r[1].Text);
-            return null;
+            throw new Exception($"Could not get remote path {remote_path} as local path {local_path}.");
         }
         sw.Restart();
         SshAuditFileInfo dir_archive_file = new SshAuditFileInfo(this, dir_archive_filename);
         LocalAuditFileInfo lf = dir_archive_file.GetAsLocalFile();
         sw.Stop();
-        if (lf == null)
-        {
-            Error(here, "Failed to get archive file {0} as local file.", dir_archive_filename);
-            return null;
-        }
+        
         Info("Downloaded archive file {0} in to local file {1} in {2} ms.", dir_archive_file.FullName, lf.FullName, sw.ElapsedMilliseconds);
         cs = new SshCommandSpawanble(this.SshClient.CreateCommand(string.Format("rm {0} && echo Succeded || echo Failed", dir_archive_filename)));
-        cmd_session = Expect.Spawn(cs, this.LineTerminator);
+        cmd_session = Expect.Spawn(cs, this.LineTerminator, this.CancellationToken);
         r = cmd_session.Expect.RegexEither("Succeded", null, "Failed", null);
         if (r[0].IsMatch)
         {
@@ -467,7 +462,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         {
             using (Stream fs = File.OpenRead(lf.FullName))
             {
-                ReaderFactory.Open(fs).WriteAllToDirectory(this.WorkDirectory.FullName,
+                ReaderFactory.Open(fs).WriteAllToDirectory(WorkDirectory!.FullName,
                     new SharpCompress.Common.ExtractionOptions()
                     {
                         Overwrite = true,
@@ -487,7 +482,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         catch (Exception e)
         {
             Error(here, e);
-            return null;
+            throw;
         }
         finally
         {
@@ -495,10 +490,10 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         }
     }
        
-    internal ScpClient CreateScpClient([CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+    internal ScpClient? CreateScpClient([CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation caller = new CallerInformation(memberName, fileName, lineNumber);
-        ScpClient c = new ScpClient(this.HostName, this.User, ToInsecureString(this.ssh_client_pass));
+        ScpClient c = new ScpClient(this.HostName, this.User ?? throw new InvalidOperationException("SSH user is null"), ToInsecureString(this.ssh_client_pass ?? throw new InvalidOperationException("SSH user password is null.")));
         Stopwatch sw = new Stopwatch();
         try
         {
@@ -544,33 +539,32 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         Debug(caller, "Destroyed SCP connection to {0}.", this.HostName);
     }
 
-    private void ScpClient_Downloading(object sender, ScpDownloadEventArgs e)
+    private void ScpClient_Downloading(object? sender, ScpDownloadEventArgs e)
     {
         Debug("Scp client downloaded {0} of {1} bytes for file {2}.", e.Downloaded, e.Size, e.Filename);
     }
 
-    private void ScpClient_ErrorOccurred(object sender, ExceptionEventArgs e)
+    private void ScpClient_ErrorOccurred(object? sender, ExceptionEventArgs e)
     {
-        ScpClient c = sender as ScpClient;
         Error("Scp client threw an exception.");
         Error(e.Exception);
     }
     #endregion
 
     #region Event handlers
-    private void SshClient_ErrorOccurred(object sender, Renci.SshNet.Common.ExceptionEventArgs e)
+    private void SshClient_ErrorOccurred(object? sender, Renci.SshNet.Common.ExceptionEventArgs e)
     {
         Error(e.Exception);
         this.IsConnected = false;
         return;
     }
 
-    private void SshClient_HostKeyReceived(object sender, Renci.SshNet.Common.HostKeyEventArgs e)
+    private void SshClient_HostKeyReceived(object? sender, Renci.SshNet.Common.HostKeyEventArgs e)
     {
         Info("Host key fingerprint is: {0} {1}.", e.HostKeyName, BitConverter.ToString(e.FingerPrint).Replace('-', ':').ToLower());
     }
 
-    private void Ci_AuthenticationBanner(object sender, AuthenticationBannerEventArgs e)
+    private void Ci_AuthenticationBanner(object? sender, AuthenticationBannerEventArgs e)
     {
         if (e.BannerMessage.ToLower().Contains("ubuntu"))
         {
@@ -597,7 +591,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
 
     private void SshCommandAsyncCallback(IAsyncResult r)
     {
-        CommandAsyncResult car = r as CommandAsyncResult;
+        CommandAsyncResult car = (CommandAsyncResult) r;
         KeyValuePair<SshCommand, Stopwatch> cas = (KeyValuePair<SshCommand, Stopwatch>) car.AsyncState;
         if (car.IsCompleted)
         {
@@ -608,7 +602,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
 
     private void SshStreamWriteAsyncCallback(IAsyncResult r)
     {
-        KeyValuePair<string, ShellStream> cas = (KeyValuePair<string, ShellStream>) r.AsyncState;
+        KeyValuePair<string, ShellStream> cas = (KeyValuePair<string, ShellStream>)(r.AsyncState ?? throw new InvalidOperationException("Async state is null."));
         if (r.IsCompleted)
         {
             cas.Value.Flush();
@@ -618,8 +612,8 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
 
     private void SshExpectAsyncCallback(IAsyncResult r)
     {
-        ExpectAsyncResult ear  = r as ExpectAsyncResult;
-        KeyValuePair<string, Stopwatch> cas = (KeyValuePair<string, Stopwatch>)r.AsyncState;
+        ExpectAsyncResult ear  = (ExpectAsyncResult) r;
+        KeyValuePair<string, Stopwatch> cas = (KeyValuePair<string, Stopwatch>) (r.AsyncState ?? throw new InvalidOperationException("Async state is null."));
         if (r.IsCompleted)
         {
             cas.Value.Stop();
@@ -629,9 +623,8 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
     #endregion
 
     #region Fields
-    ExpectNet.Session SshSession { get; set; }
     SshClient SshClient;
-    object ssh_client_pass;
+    object? ssh_client_pass;
     List<ScpClient> scp_clients = new List<ScpClient>();
     private bool IsDisposed = false;
     #endregion
@@ -664,7 +657,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
                         this.SshClient.HostKeyReceived -= SshClient_HostKeyReceived;
                         this.SshClient.ErrorOccurred -= SshClient_ErrorOccurred;
                         this.SshClient.Dispose();
-                        this.SshClient = null;
+                        //this.SshClient = null;
                     }
                 }
                 // Release all unmanaged resources here 

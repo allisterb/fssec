@@ -2,7 +2,7 @@
 
 using System.Security;
 
-public abstract class AuditEnvironment : IDisposable
+public abstract class AuditEnvironment : Runtime, IDisposable
 {
     #region Enums
     public enum ProcessExecuteStatus
@@ -15,7 +15,7 @@ public abstract class AuditEnvironment : IDisposable
     #endregion
 
     #region Constructors
-    public AuditEnvironment(EventHandler<EnvironmentEventArgs>? message_handler, OperatingSystem os, LocalEnvironment? host_environment)
+    public AuditEnvironment(EventHandler<EnvironmentEventArgs>? message_handler, OperatingSystem os, LocalEnvironment? host_environment) : base()
     {
         this.OS = os;
         if (OS.Platform == PlatformID.Win32NT)
@@ -147,7 +147,7 @@ public abstract class AuditEnvironment : IDisposable
 
     protected StringBuilder ProcessErrorSB = new StringBuilder();
 
-    internal string LineTerminator { get; set; }
+    protected string LineTerminator { get; set; }
 
     #endregion
 
@@ -699,53 +699,53 @@ public abstract class AuditEnvironment : IDisposable
     }
 
     [DebuggerStepThrough]
-    internal void Info(string message_format, params object[] message)
+    public new void Info(string message_format, params object[] message)
     {
         TraceSource.TraceInformation(message_format, message);
         OnMessage(new EnvironmentEventArgs(EventMessageType.INFO, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Error(string message_format, params object[] message)
+    public new void Error(string message_format, params object[] message)
     {
         TraceSource.TraceEvent(TraceEventType.Error, 0, message_format, message);
         OnMessage(new EnvironmentEventArgs(EventMessageType.ERROR, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Error(CallerInformation caller, string message_format, params object[] message)
+    public void Error(CallerInformation caller, string message_format, params object[] message)
     {
         OnMessage(new EnvironmentEventArgs(caller, EventMessageType.ERROR, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Error(Exception e)
+    public void Error(Exception e)
     {
         OnMessage(new EnvironmentEventArgs(e));
     }
 
     [DebuggerStepThrough]
-    internal void Error(CallerInformation caller, Exception e)
+    public void Error(CallerInformation caller, Exception e)
     {
         OnMessage(new EnvironmentEventArgs(caller, e));
     }
 
     [DebuggerStepThrough]
-    internal void Error(Exception e, string message_format, params object[] message)
+    public new void Error(Exception e, string message_format, params object[] message)
     {
         Error(message_format, message);
         Error(e);
     }
 
     [DebuggerStepThrough]
-    internal void Error(CallerInformation caller, Exception e, string message_format, params object[] message)
+    public void Error(CallerInformation caller, Exception e, string message_format, params object[] message)
     {
         Error(message_format, message);
         Error(caller, e);
     }
 
     [DebuggerStepThrough]
-    internal void Error(AggregateException ae)
+    public void Error(AggregateException ae)
     {
         if (ae.InnerExceptions != null && ae.InnerExceptions.Count >= 1)
         {
@@ -758,14 +758,14 @@ public abstract class AuditEnvironment : IDisposable
         
 
     [DebuggerStepThrough]
-    internal void Error(AggregateException ae, string message_format, params object[] message)
+    public void Error(AggregateException ae, string message_format, params object[] message)
     {
         Error(message_format, message);
         Error(ae);
     }
 
     [DebuggerStepThrough]
-    internal void Error(CallerInformation caller, AggregateException ae, string message_format, params object[] message)
+    public void Error(CallerInformation caller, AggregateException ae, string message_format, params object[] message)
     {
         Error(caller, message_format, message);
         if (ae.InnerExceptions != null && ae.InnerExceptions.Count >= 1)
@@ -778,43 +778,43 @@ public abstract class AuditEnvironment : IDisposable
     }
 
     [DebuggerStepThrough]
-    internal void Success(string message_format, params object[] message)
+    public void Success(string message_format, params object[] message)
     {
         TraceSource.TraceEvent(TraceEventType.Information, 0, message_format, message);
         OnMessage(new EnvironmentEventArgs(EventMessageType.SUCCESS, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Warning(string message_format, params object[] message)
+    public void Warning(string message_format, params object[] message)
     {
         OnMessage(new EnvironmentEventArgs(EventMessageType.WARNING, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Status(string message_format, params object[] message)
+    public void Status(string message_format, params object[] message)
     {
         OnMessage(new EnvironmentEventArgs(EventMessageType.STATUS, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Progress(string operation, int total, int complete, TimeSpan? time = null)
+    public void Progress(string operation, int total, int complete, TimeSpan? time = null)
     {
         OnMessage(new EnvironmentEventArgs(new OperationProgress(operation, total, complete, time)));
     }
 
     [DebuggerStepThrough]
-    internal void Debug(CallerInformation caller, string message_format, params object[] message)
+    public void Debug(CallerInformation caller, string message_format, params object[] message)
     {
         OnMessage(new EnvironmentEventArgs(caller, EventMessageType.DEBUG, message_format, message));
     }
 
     [DebuggerStepThrough]
-    internal void Debug(string message_format, params object[] message)
+    public new void Debug(string message_format, params object[] message)
     {
         OnMessage(new EnvironmentEventArgs(EventMessageType.DEBUG, message_format, message));
     }
 
-    internal CallerInformation Here([CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+    public CallerInformation Here([CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation c;
         c.Name = memberName;

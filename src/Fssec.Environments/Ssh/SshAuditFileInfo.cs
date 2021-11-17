@@ -4,13 +4,6 @@ using Alpheus.IO;
 
 public class SshAuditFileInfo : AuditFileInfo
 {
-    #region Constructors
-    public SshAuditFileInfo(SshAuditEnvironment env, string file_path) : base(env, file_path)
-    {
-        this.SshAuditEnvironment = env;
-    }
-    #endregion
-
     #region Overriden properties
     public override string FullName { get; protected set; }
 
@@ -75,19 +68,21 @@ public class SshAuditFileInfo : AuditFileInfo
     {
         get
         {
-            if (this._Directory == null)
+            if (this._Directory is null)
             {
                 string o = this.EnvironmentExecute("dirname", this.FullName);
                 if (!string.IsNullOrEmpty(o))
                 {
                     this._Directory = new SshAuditDirectoryInfo(this.SshAuditEnvironment, o);
+                    return this._Directory;
                 }
                 else
                 {
                     EnvironmentCommandError(this.AuditEnvironment.Here(), "Could not get parent directory for {0}.", this.FullName);
+                    throw new InvalidOperationException($"Could not get parent directory for {FullName}");
                 }
             }
-            return this._Directory;
+            else return this._Directory;
         }
     }
 
@@ -157,7 +152,7 @@ public class SshAuditFileInfo : AuditFileInfo
         CallerInformation caller = this.AuditEnvironment.Here();
         List<string> components = this.Directory.FullName.Split(this.AuditEnvironment.PathSeparator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries).ToList() ;
         components.RemoveAll(c => c.Contains(this.AuditEnvironment.PathSeparator) || c.Contains(":")); //Remove any drive or device parts
-        DirectoryInfo parent = this.AuditEnvironment.WorkDirectory;
+        DirectoryInfo parent = this.AuditEnvironment.WorkDirectory ?? throw new InvalidOperationException("SSH audit environment work directory is null.");
         if (components.Count > 1)
         {
             foreach (string c in components.Take(components.Count - 1))
@@ -172,14 +167,7 @@ public class SshAuditFileInfo : AuditFileInfo
             }
         }
         FileInfo lf = this.SshAuditEnvironment.GetFileAsLocal(this.FullName, this.CombinePaths(parent.FullName, this.Name));
-        if (lf != null)
-        {
-            return new LocalAuditFileInfo(this.AuditEnvironment.HostEnvironment, lf);
-        }
-        else
-        {
-            return null;
-        }
+        return new LocalAuditFileInfo(this.AuditEnvironment.HostEnvironment ?? throw new InvalidOperationException("SSH environment host environment is null."), lf);
     }
 
     public override async Task<LocalAuditFileInfo> GetAsLocalFileAsync()
@@ -188,7 +176,14 @@ public class SshAuditFileInfo : AuditFileInfo
     }
     #endregion
 
-        
+    #region Constructors
+    public SshAuditFileInfo(SshAuditEnvironment env, string file_path) : base(env, file_path)
+    {
+        this.SshAuditEnvironment = env;
+        this.FullName = file_path;
+        this.Name = this.GetPathComponents().Last();
+    }
+    #endregion    
 
     #region Properties
     protected SshAuditEnvironment SshAuditEnvironment { get; set; }
@@ -196,7 +191,7 @@ public class SshAuditFileInfo : AuditFileInfo
 
     #region Fields
     private long? _Length;
-    private IDirectoryInfo _Directory;
+    private IDirectoryInfo? _Directory;
     #endregion
 }
 

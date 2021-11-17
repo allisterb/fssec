@@ -13,13 +13,13 @@ public abstract class AuditFileSystemInfo : IFileSystemInfo
     #endregion
 
     #region Properties
-    public abstract string FullName { get; protected set; }
-    public abstract string Name { get; protected set; }
     public string PathSeparator { get; init; } 
     public AuditEnvironment AuditEnvironment { get; init; }
     #endregion
 
     #region Abstract properties
+    public abstract string FullName { get; protected set; }
+    public abstract string Name { get; protected set; }
     public abstract bool Exists { get; }
     #endregion
 
