@@ -177,7 +177,7 @@ public abstract class AuditEnvironment : Runtime, IDisposable
 
     public virtual string GetOSName()
     {
-        if (!string.IsNullOrEmpty(this.OSName)) return this.OSName;
+        if (!string.IsNullOrEmpty(this.OSName) && this.OSName != "Other") return this.OSName;
         CallerInformation here = Here();
         string cmd = "", args = "";
         if (this.IsUnix)

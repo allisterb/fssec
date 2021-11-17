@@ -22,8 +22,8 @@ using SharpCompress.Readers;
 public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
 {
     #region Constructors
-    public SshAuditEnvironment(EventHandler<EnvironmentEventArgs> message_handler, string client, string host_name, int port, string user, object pass, string keyfile, OperatingSystem os, LocalEnvironment host_environment) 
-        : base(message_handler, os, host_environment)
+    public SshAuditEnvironment(EventHandler<EnvironmentEventArgs> message_handler, string host_name, int port, string user, object pass, string? keyfile, LocalEnvironment host_environment) 
+        : base(message_handler, new OperatingSystem(PlatformID.Unix, new Version()), host_environment)
     {
         ConnectionInfo ci;
         Info("Connecting to {0}:{1}...", host_name ?? throw new Exception(), port);
@@ -96,7 +96,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
             Debug("Created work directory {0}.", this.WorkDirectory.FullName);
         }
         Info("Using work directory: {0}.", this.WorkDirectory.FullName);
-            
+        this.Initialized = true;
     }
     #endregion
 

@@ -111,8 +111,7 @@ namespace Fssec
                 Logger = new ConsoleLogger();
             }
         }
-
-        public static string Config(string i) => Runtime.Configuration[i];
+        public static string Config(string i) => Configuration[i];
            
         public static void Info(string messageTemplate, params object[] args) => Logger.Info(messageTemplate, args);
 
@@ -135,7 +134,7 @@ namespace Fssec
             }
         }
 
-        public string CalculateMD5Hash(string input)
+        public static string CalculateMD5Hash(string input)
         {
             // step 1, calculate MD5 hash from input
             MD5 md5 = MD5.Create();
