@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Fssec.Base\Fssec.Base.csproj" />
+    <ProjectReference Include="..\Fssec.Core\Fssec.Core.csproj" />
+    <ProjectReference Include="..\Fssec.Environments\Fssec.Environments.csproj" />
+  </ItemGroup>
+
+</Project>

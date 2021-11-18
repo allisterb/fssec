@@ -27,13 +27,13 @@ namespace Fssec
             else if (Assembly.GetEntryAssembly()?.GetName().Name == "Fssec.CLI" && Environment.GetEnvironmentVariable("USERNAME") == "Allister")
             {
                 Configuration = new ConfigurationBuilder()
-                    .AddUserSecrets("f3ed0dc7-f978-44ae-8add-9e5bfcf8fa8a")
+                    .AddUserSecrets("bdb696c2-242b-482c-8e96-cd61bb87b67e")
                     .Build();
             }
             else if (Assembly.GetEntryAssembly()?.GetName().Name == "Fssec.Web" && Environment.GetEnvironmentVariable("USERNAME") == "Allister")
             {
                 Configuration = new ConfigurationBuilder()
-                    .AddUserSecrets("f3ed0dc7-f978-44ae-8add-9e5bfcf8fa8a")
+                    .AddUserSecrets("bdb696c2-242b-482c-8e96-cd61bb87b67e")
                     .Build();
             }
             else
@@ -64,6 +64,7 @@ namespace Fssec
 
         public static DirectoryInfo AssemblyDirectory = new DirectoryInfo(EntryAssembly.Location);
 
+        public static Version AssemblyVersion = EntryAssembly.GetName().Version!;
         public static DirectoryInfo CurrentDirectory { get; } = new DirectoryInfo(Directory.GetCurrentDirectory());
 
         public static IConfigurationRoot Configuration { get; protected set; }
