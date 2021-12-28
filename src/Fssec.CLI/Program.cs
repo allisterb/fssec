@@ -34,6 +34,15 @@ class Program : Runtime
     #region Entry point
     static void Main(string[] args)
     {
+        if (args.Contains("--debug"))
+        {
+            SetLogger(new SerilogLogger(console: true, debug: true));
+            Info("Debug mode set.");
+        }
+        else
+        {
+            SetLogger(new SerilogLogger(console: true, debug: false));
+        }
         PrintLogo();
         ParserResult<object> result = new Parser().ParseArguments<Options, ApiOptions, PingOptions, EndpointsOptions, SchemaOptions, VerticesOptions, BuiltinOptions>(args);
         result.WithParsed<ApiOptions>(o =>
@@ -86,7 +95,9 @@ class Program : Runtime
     #region Event Handlers
     private static void Program_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        Error((Exception)e.ExceptionObject, "Unhandled runtime error occurred. Fssec CLI will now shutdown.");
+        Serilog.Log.CloseAndFlush();
+        Error("Unhandled runtime error occurred. Grover CLI will now shutdown.");
+        Con.WriteException((Exception)e.ExceptionObject);
         Exit(ExitResult.UNHANDLED_EXCEPTION);
     }
 

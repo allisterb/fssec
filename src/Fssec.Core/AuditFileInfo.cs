@@ -1,6 +1,7 @@
-﻿using Alpheus.IO;
+﻿namespace Fssec;
 
-namespace Fssec;
+using Alpheus.IO;
+
 public abstract class AuditFileInfo : AuditFileSystemInfo, IFileInfo
 {
     #region Constructors

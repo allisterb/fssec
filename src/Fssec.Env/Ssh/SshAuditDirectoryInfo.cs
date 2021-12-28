@@ -24,7 +24,6 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
         {
             string[] components = this.GetPathComponents();
             return new SshAuditDirectoryInfo(this.SshAuditEnvironment, components[0]);
-
         }
     }
 
@@ -34,7 +33,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
         {
             if (!this._Exists.HasValue)
             {
-                string o = this.EnvironmentExecute(string.Format("[ -d {0} ] && echo \"Yes\" || echo \"No\"", this.FullName), "");
+                string? o = this.EnvironmentExecute(string.Format("[ -d {0} ] && echo \"Yes\" || echo \"No\"", this.FullName), "");
                 if (!string.IsNullOrEmpty(o) && o == "Yes")
                 {
                     this._Exists =  true;
@@ -45,7 +44,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
                 }
                 else
                 {
-                    EnvironmentCommandError(this.AuditEnvironment.Here(), "Could not test for existence of {0}. Command returned: {1}.", this.FullName, o);
+                    EnvironmentCommandError(this.AuditEnvironment.Here(), "Could not test for existence of {0}. Command returned: {1}.", this.FullName, o ?? "");
                     return false;
                 }
             }
@@ -57,7 +56,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
     #region Overriden methods
     public override IDirectoryInfo[] GetDirectories()
     {
-        string o = this.EnvironmentExecute("find", string.Format("{0} -type d -name \"*\"", this.FullName));
+        string? o = this.EnvironmentExecute("find", string.Format("{0} -type d -name \"*\"", this.FullName));
         if (!string.IsNullOrEmpty(o))
         {
             SshAuditDirectoryInfo[] dirs = o.Split("\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Select(dn => new SshAuditDirectoryInfo(this.SshAuditEnvironment, dn)).ToArray();
@@ -72,7 +71,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
 
     public override IDirectoryInfo[] GetDirectories(string path)
     {
-        string o = this.EnvironmentExecute("find", string.Format("{0} -type d -name \"*\"", this.CombinePaths(this.FullName, path)));
+        string? o = this.EnvironmentExecute("find", string.Format("{0} -type d -name \"*\"", this.CombinePaths(this.FullName, path)));
         if (!string.IsNullOrEmpty(o))
         {
             SshAuditDirectoryInfo[] dirs = o.Split("\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Select(dn => new SshAuditDirectoryInfo(this.SshAuditEnvironment, dn)).ToArray();
@@ -92,7 +91,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
 
     public override IFileInfo[] GetFiles()
     {
-        string o = this.EnvironmentExecute("find", string.Format("{0} -type f -name \"*\"", this.FullName));
+        string? o = this.EnvironmentExecute("find", string.Format("{0} -type f -name \"*\"", this.FullName));
         if (!string.IsNullOrEmpty(o))
         {
             SshAuditFileInfo[] files = o.Split("\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Select(fn => new SshAuditFileInfo(this.SshAuditEnvironment, fn)).ToArray();
@@ -121,7 +120,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
             search_path = path;
         }
 
-        string o = this.EnvironmentExecute("find", string.Format("{0} -type f -name \"{1}\"", this.CombinePaths(this.FullName, search_path), wildcard));
+        string? o = this.EnvironmentExecute("find", string.Format("{0} -type f -name \"{1}\"", this.CombinePaths(this.FullName, search_path), wildcard));
         if (!string.IsNullOrEmpty(o))
         {
             SshAuditFileInfo[] files = o.Split("\n".ToCharArray(), StringSplitOptions.RemoveEmptyEntries).Select(fn => new SshAuditFileInfo(this.SshAuditEnvironment, fn)).ToArray();
@@ -141,7 +140,7 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
 
     public override AuditFileInfo? GetFile(string file_path)
     {
-        string o = this.EnvironmentExecute("find", string.Format("{0} -type f -name \"{1}\"", this.FullName, file_path));
+        string? o = this.EnvironmentExecute("find", string.Format("{0} -type f -name \"{1}\"", this.FullName, file_path));
         if (!string.IsNullOrEmpty(o))
         {
             return this.AuditEnvironment.ConstructFile(o);

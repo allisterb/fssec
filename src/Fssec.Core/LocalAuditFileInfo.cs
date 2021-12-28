@@ -1,6 +1,6 @@
-﻿using Alpheus.IO;
+﻿namespace Fssec;
 
-namespace Fssec;
+using Alpheus.IO;
 
 public class LocalAuditFileInfo : AuditFileInfo
 {

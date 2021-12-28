@@ -51,14 +51,22 @@ public class SshAuditFileInfo : AuditFileInfo
             DateTime result;
             string cmd = "stat";
             string args = string.Format("-c '%y' {0}", this.FullName);
-            string d = EnvironmentExecute(cmd, args);
-            if (DateTime.TryParse(d, out result))
+            string? d = EnvironmentExecute(cmd, args);
+            if (!string.IsNullOrEmpty(d))
             {
-                return result;
+                if (DateTime.TryParse(d, out result))
+                {
+                    return result;
+                }
+                else
+                {
+                    EnvironmentCommandError(this.AuditEnvironment.Here(), "Could not parse result of {0} as DateTime: {1}.", cmd + " " + args, d);
+                    return new DateTime(1000, 1, 1);
+                }
             }
             else
             {
-                EnvironmentCommandError(this.AuditEnvironment.Here(), "Could not parse result of {0} as DateTime: {1}.", cmd + " " + args, d);
+                EnvironmentCommandError(this.AuditEnvironment.Here(), "Command {0} returned null.", cmd + " " + args);
                 return new DateTime(1000, 1, 1);
             }
         }
@@ -70,7 +78,7 @@ public class SshAuditFileInfo : AuditFileInfo
         {
             if (this._Directory is null)
             {
-                string o = this.EnvironmentExecute("dirname", this.FullName);
+                string? o = this.EnvironmentExecute("dirname", this.FullName);
                 if (!string.IsNullOrEmpty(o))
                 {
                     this._Directory = new SshAuditDirectoryInfo(this.SshAuditEnvironment, o);
@@ -106,8 +114,8 @@ public class SshAuditFileInfo : AuditFileInfo
     #region Overriden methods
     public override bool PathExists(string file_path)
     {
-        string result = this.EnvironmentExecute("test", "-f " + this.CombinePaths(this.Directory.FullName, file_path) + " && echo \"Yes\" || echo \"No\"");
-        if (result == "Yes" || result == "No")
+        string? result = this.EnvironmentExecute("test", "-f " + this.CombinePaths(this.Directory.FullName, file_path) + " && echo \"Yes\" || echo \"No\"");
+        if (!string.IsNullOrEmpty(result) && (result == "Yes" || result == "No"))
         {
             return result == "Yes" ? true : false;
         }
@@ -120,7 +128,7 @@ public class SshAuditFileInfo : AuditFileInfo
 
     public override string ReadAsText()
     {
-        string o = this.EnvironmentExecute("cat", this.FullName);
+        string? o = this.EnvironmentExecute("cat", this.FullName);
 
         if (!string.IsNullOrEmpty(o))
         {

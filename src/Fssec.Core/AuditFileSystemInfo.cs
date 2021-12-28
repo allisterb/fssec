@@ -1,6 +1,6 @@
-﻿using Alpheus.IO;
+﻿namespace Fssec;
 
-namespace Fssec;
+using Alpheus.IO;
 
 public abstract class AuditFileSystemInfo : IFileSystemInfo
 {
@@ -24,7 +24,7 @@ public abstract class AuditFileSystemInfo : IFileSystemInfo
     #endregion
 
     #region Protected methods
-    protected string EnvironmentExecute(string command, string args, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
+    protected string? EnvironmentExecute(string command, string args, [CallerMemberName] string memberName = "", [CallerFilePath] string fileName = "", [CallerLineNumber] int lineNumber = 0)
     {
         CallerInformation caller = new CallerInformation(memberName, fileName, lineNumber);
         AuditEnvironment.ProcessExecuteStatus process_status;
@@ -39,7 +39,7 @@ public abstract class AuditFileSystemInfo : IFileSystemInfo
         else
         {
             this.AuditEnvironment.Debug(caller, "The command {0} {1} did not execute successfully. Output: {1}", command, args, process_output + process_error);
-            return string.Empty;
+            return null;
         }
 
     }

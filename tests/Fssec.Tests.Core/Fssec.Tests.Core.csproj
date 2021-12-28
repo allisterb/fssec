@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Fssec.Core\Fssec.Core.csproj" />
-    <ProjectReference Include="..\..\src\Fssec.Environments\Fssec.Environments.csproj" />
+    <ProjectReference Include="..\..\src\Fssec.Env\Fssec.Env.csproj" />
   </ItemGroup>
 
 </Project>

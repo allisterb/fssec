@@ -83,40 +83,17 @@ public abstract class AuditEnvironment : Runtime, IDisposable
     #region Properties
     public bool IsWindows
     {
-        get
-        {
-            if (this.OS != null && this.OS.Platform == PlatformID.Win32NT)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        get => this.OS != null && this.OS.Platform == PlatformID.Win32NT;
     }
 
     public bool IsUnix
     {
-        get
-        {
-            if (this.OS != null && this.OS.Platform == PlatformID.Unix)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+        get => this.OS != null && this.OS.Platform == PlatformID.Unix;
     }
 
     public bool IsMonoRuntime
     {
-        get
-        {
-            return Type.GetType("Mono.Runtime") != null;
-        }
+        get => Type.GetType("Mono.Runtime") != null;
     }
 
     public string PathSeparator { get; protected set; } = string.Empty;

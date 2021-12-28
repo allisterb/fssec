@@ -150,7 +150,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         {
             Debug("stat {0} returned {1}.", dir_path, stat_cmd.Error);
             return false;
-        }            
+        }
     }
 
     public override bool Execute(string command, string arguments, out ProcessExecuteStatus process_status, out string process_output, out string process_error, Dictionary<string, string>? env = null,

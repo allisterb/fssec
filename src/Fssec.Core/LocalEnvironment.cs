@@ -158,8 +158,10 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
             StringBuilder process_err_sb = new StringBuilder();
             ProcessStartInfo psi = new ProcessStartInfo(command);
             psi.UserName = user;
+#if WINDOWS
             psi.Password = password;
             psi.Domain = domain_name;
+#endif
             psi.Arguments = arguments;
             psi.CreateNoWindow = true;
             psi.RedirectStandardError = true;
@@ -239,7 +241,6 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
             {
                 process_status = ProcessExecuteStatus.Unknown;
                 return false;
-
             }
 
         }
@@ -372,13 +373,12 @@ public class LocalEnvironment : AuditEnvironment, IOperatingSystemEnvironment
                     results.Add(_f, text);
                 }
             }
-     
         });
         sw.Stop();
         Info("Read text for {0} out of {1} files in {2} ms.", results.Count(r => r.Value.Length > 0), results.Count, sw.ElapsedMilliseconds);
         return results;
     }
-    #endregion
+#endregion
 
     #region Properties
     public bool IsDockerContainer { get; internal set; }
