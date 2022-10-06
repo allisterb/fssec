@@ -1,13 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Net.Http;
 using System.Reflection;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 using Microsoft.Extensions.Configuration;
 
@@ -18,19 +9,13 @@ namespace Fssec
         #region Constructors
         static Runtime()
         {
-            if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("KUBERNETES_PORT")) || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENSHIFT_BUILD_NAMESPACE")))
+            if (IsKubernetesPod || !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENSHIFT_BUILD_NAMESPACE")))
             {
                 Configuration = new ConfigurationBuilder()
                     .AddEnvironmentVariables()
                     .Build();
             }
-            else if (Assembly.GetEntryAssembly()?.GetName().Name == "Fssec.CLI" && Environment.GetEnvironmentVariable("USERNAME") == "Allister")
-            {
-                Configuration = new ConfigurationBuilder()
-                    .AddUserSecrets("bdb696c2-242b-482c-8e96-cd61bb87b67e")
-                    .Build();
-            }
-            else if (Assembly.GetEntryAssembly()?.GetName().Name == "Fssec.Web" && Environment.GetEnvironmentVariable("USERNAME") == "Allister")
+            else if ((EntryAssemblyName == "Fssec.CLI" || EntryAssemblyName == "Fssec.Web") && Environment.GetEnvironmentVariable("USERNAME") == "Allister")
             {
                 Configuration = new ConfigurationBuilder()
                     .AddUserSecrets("bdb696c2-242b-482c-8e96-cd61bb87b67e")
@@ -43,7 +28,7 @@ namespace Fssec
                 .Build();
             }
 
-            HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Fssec/0.1");
+            HttpClient.DefaultRequestHeaders.UserAgent.ParseAdd("fssec/0.1");
             Logger = new ConsoleLogger();
         }
         public Runtime(CancellationToken ct)
@@ -52,7 +37,7 @@ namespace Fssec
             {
                 throw new InvalidOperationException("A logger is not assigned.");
             }
-            CancellationToken = ct;
+            Ct = ct;
             Type = this.GetType();
         }
         public Runtime(): this(Cts.Token) {}
@@ -62,30 +47,47 @@ namespace Fssec
         #region Properties
         public static Assembly EntryAssembly { get; } = Assembly.GetEntryAssembly()!;
 
-        public static DirectoryInfo AssemblyDirectory = new DirectoryInfo(EntryAssembly.Location);
+        public static string EntryAssemblyName { get; } = EntryAssembly.GetName().Name!;
 
-        public static Version AssemblyVersion = EntryAssembly.GetName().Version!;
+        
+        public static DirectoryInfo EntryAssemblyDirectory = new DirectoryInfo(EntryAssembly.Location);
+
+        
+        public static Version EntryAssemblyVersion = EntryAssembly.GetName().Version!;
+
+        public static string RuntimeAssemblyLocation { get; } = Path.GetDirectoryName(Assembly.GetAssembly(typeof(Runtime))!.Location)!;
+
+        public static Version RuntimeAssemblyVersion { get; } = Assembly.GetAssembly(typeof(Runtime))!.GetName().Version!;
+
         public static DirectoryInfo CurrentDirectory { get; } = new DirectoryInfo(Directory.GetCurrentDirectory());
 
         public static IConfigurationRoot Configuration { get; protected set; }
+
+        public static string Config(string i) => Configuration[i];
+
+        public static bool DebugEnabled { get; set; }
+
+        public static bool InteractiveConsole { get; set; } = false;
+
+        public static bool IsAzureFunction { get; set; }
+
+        public static bool IsKubernetesPod { get; } = (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("KUBERNETES_PORT")));
+
+        public static string PathSeparator { get; } = Environment.OSVersion.Platform == PlatformID.Win32NT ? "\\" : "/";
+
+        public static string LineTerminator { get; } = Environment.OSVersion.Platform == PlatformID.Win32NT ? "\r\n" : "\n";
 
         public static Logger Logger { get; protected set; }
 
         public static CancellationTokenSource Cts { get; } = new CancellationTokenSource();
 
-        public static CancellationToken Ct { get; } = Cts.Token;
+        public static CancellationToken Ct { get; protected set; } = Cts.Token;
 
         public static HttpClient HttpClient { get; } = new HttpClient();
 
         public static string YY = DateTime.Now.Year.ToString().Substring(2, 2);
 
         public bool Initialized { get; protected set; }
-
-        public static bool IsAzureFunction { get; }
-
-        public static bool IsKubernetes { get; } = (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("KUBERNETES_PORT")));
-
-        public CancellationToken CancellationToken { get; protected set; }
 
         public Type Type { get; }
 
@@ -112,17 +114,59 @@ namespace Fssec
                 Logger = new ConsoleLogger();
             }
         }
-        public static string Config(string i) => Configuration[i];
-           
+
+        [DebuggerStepThrough]
         public static void Info(string messageTemplate, params object[] args) => Logger.Info(messageTemplate, args);
 
+        [DebuggerStepThrough]
         public static void Debug(string messageTemplate, params object[] args) => Logger.Debug(messageTemplate, args);
 
+        [DebuggerStepThrough]
         public static void Error(string messageTemplate, params object[] args) => Logger.Error(messageTemplate, args);
 
+        [DebuggerStepThrough]
         public static void Error(Exception ex, string messageTemplate, params object[] args) => Logger.Error(ex, messageTemplate, args);
 
+        [DebuggerStepThrough]
+        public static void Warn(string messageTemplate, params object[] args) => Logger.Warn(messageTemplate, args);
+
+        [DebuggerStepThrough]
+        public static void Fatal(string messageTemplate, params object[] args) => Logger.Fatal(messageTemplate, args);
+
+        [DebuggerStepThrough]
         public static Logger.Op Begin(string messageTemplate, params object[] args) => Logger.Begin(messageTemplate, args);
+
+        [DebuggerStepThrough]
+        public static void WarnIfFileExists(string filename)
+        {
+            if (File.Exists(filename)) Warn("File {0} exists, overwriting...", filename);
+        }
+
+        [DebuggerStepThrough]
+        public void FailIfNotInitialized()
+        {
+            if (!Initialized)
+            {
+                throw new RuntimeNotInitializedException(this);
+            }
+        }
+
+        [DebuggerStepThrough]
+        public T FailIfNotInitialized<T>(Func<T> r) => Initialized ? r() : throw new RuntimeNotInitializedException(this);
+
+        [DebuggerStepThrough]
+        public static string FailIfFileNotFound(string filePath)
+        {
+            if (filePath.StartsWith("http://") || filePath.StartsWith("https://"))
+            {
+                return filePath;
+            }
+            else if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException(filePath);
+            }
+            else return filePath;
+        }
 
         public static void SetPropsFromDict<T>(T instance, Dictionary<string, object> p)
         {
@@ -135,24 +179,9 @@ namespace Fssec
             }
         }
 
-        public static string CalculateMD5Hash(string input)
-        {
-            // step 1, calculate MD5 hash from input
-            MD5 md5 = MD5.Create();
-            byte[] inputBytes = Encoding.ASCII.GetBytes(input);
-            byte[] hash = md5.ComputeHash(inputBytes);
-
-            // step 2, convert byte array to hex string
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < hash.Length; i++)
-            {
-                sb.Append(hash[i].ToString("X2"));
-            }
-            return sb.ToString();
-        }
         public void ThrowIfNotInitialized()
         {
-            if (!this.Initialized) throw new ApiNotInitializedException(this);
+            if (!this.Initialized) throw new RuntimeNotInitializedException(this);
         }
         #endregion
     }

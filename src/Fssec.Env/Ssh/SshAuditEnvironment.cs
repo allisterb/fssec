@@ -239,7 +239,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         ShellStream stream = this.SshClient.CreateShellStream("dumb", 0, 0, 800, 600, 1024, new Dictionary<TerminalModes, uint> { { TerminalModes.ECHO, 0 } });
         stream.DataReceived += (s, d) => shell_data.Append(Encoding.UTF8.GetString(d.Data));
         c = string.Format("PAGER=cat su -c \"echo CMD_START && {0} {1} && echo CMD_SUCCESS || echo CMD_ERROR\" {2} || echo CMD_ERROR", command, arguments, user);
-        byte[] b = Encoding.UTF8.GetBytes(c + this.LineTerminator);
+        byte[] b = Encoding.UTF8.GetBytes(c + LineTerminator);
         Stopwatch cs = new Stopwatch();
         cs.Start();
         IAsyncResult wr = stream.BeginWrite(b, 0, b.Length, new AsyncCallback(SshStreamWriteAsyncCallback), new KeyValuePair<string, ShellStream>(c, stream));
@@ -424,7 +424,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         string dir_archive_filename = string.Format("_devaudit_{0}.tgz", this.GetTimestamp());
         SshCommandSpawanble cs = new SshCommandSpawanble(this.SshClient.CreateCommand(string.Format("tar -czf {0} -C {1} . && stat {0} || echo Failed", dir_archive_filename, remote_path)));
         sw.Start();
-        ExpectNet.Session cmd_session = Expect.Spawn(cs, this.LineTerminator, this.CancellationToken);
+        ExpectNet.Session cmd_session = Expect.Spawn(cs, LineTerminator, Ct);
         List<IResult> r = cmd_session.Expect.RegexEither("Size:\\s+([0-9]+)", null, "Failed", null);
         sw.Stop();
         long dir_archive_size;
@@ -447,7 +447,7 @@ public class SshAuditEnvironment : AuditEnvironment, IOperatingSystemEnvironment
         
         Info("Downloaded archive file {0} in to local file {1} in {2} ms.", dir_archive_file.FullName, lf.FullName, sw.ElapsedMilliseconds);
         cs = new SshCommandSpawanble(this.SshClient.CreateCommand(string.Format("rm {0} && echo Succeded || echo Failed", dir_archive_filename)));
-        cmd_session = Expect.Spawn(cs, this.LineTerminator, this.CancellationToken);
+        cmd_session = Expect.Spawn(cs, LineTerminator, Ct);
         r = cmd_session.Expect.RegexEither("Succeded", null, "Failed", null);
         if (r[0].IsMatch)
         {

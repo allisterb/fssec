@@ -1,6 +1,7 @@
 namespace Fssec;
 
-public class ApiNotInitializedException : Exception
+using System;
+public class RuntimeNotInitializedException : Exception
 {
-    public ApiNotInitializedException(Runtime api) : base($"The {api.GetType().Name} Api is not initialized.") {}
+    public RuntimeNotInitializedException(Runtime api) : base($"The {api.GetType().Name} Api is not initialized.") {}
 }

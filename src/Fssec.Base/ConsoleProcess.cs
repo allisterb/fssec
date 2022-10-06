@@ -19,7 +19,7 @@ public class ConsoleProcess : Runtime, IDisposable
     public ConsoleProcess(string cmd, string[] args, bool relativeToAssemblyDir = true, OnExit? onExit = null, OnOutput? onOutput = null,  OnError? onError = null)
     {
         Process = new Process();
-        Cmd = relativeToAssemblyDir ? Path.Combine(AssemblyDirectory.FullName, cmd) : cmd;
+        Cmd = relativeToAssemblyDir ? Path.Combine(EntryAssemblyDirectory.FullName, cmd) : cmd;
         Args = args;
         if (!File.Exists(Cmd))
         {
@@ -53,7 +53,7 @@ public class ConsoleProcess : Runtime, IDisposable
 
     private void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
     {
-        if (CancellationToken.IsCancellationRequested && !Process.HasExited)
+        if (Ct.IsCancellationRequested && !Process.HasExited)
         {
             Stop();
             return;
@@ -68,7 +68,7 @@ public class ConsoleProcess : Runtime, IDisposable
 
     private void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
     { 
-        if (CancellationToken.IsCancellationRequested && !Process.HasExited)
+        if (Ct.IsCancellationRequested && !Process.HasExited)
         {
             Stop();
             return;

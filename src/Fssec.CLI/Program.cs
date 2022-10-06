@@ -64,7 +64,7 @@ class Program : Runtime
     static void PrintLogo()
     {
         Con.Write(new FigletText(Font, "Fssec").LeftAligned().Color(Color.Blue));
-        Con.Write(new Text($"v{AssemblyVersion.ToString(3)}").LeftAligned());
+        Con.Write(new Text($"v{RuntimeAssemblyVersion.ToString(3)}").LeftAligned());
     }
 
     public static void Exit(ExitResult result)

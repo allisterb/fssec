@@ -1,4 +1,7 @@
 namespace Fssec;
+
+using System.Collections.Generic;
+
 public static class CollectionExtensions
 {
     public static T? PeekIfNotEmpty<T>(this Stack<T> q) => q.Count > 0 ? q.Peek() : default(T);

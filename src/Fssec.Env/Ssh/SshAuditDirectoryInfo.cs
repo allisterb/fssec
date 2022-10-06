@@ -107,13 +107,13 @@ public class SshAuditDirectoryInfo : AuditDirectoryInfo
 
     public override IFileInfo[] GetFiles(string path)
     {
-        string[] pc = path.Split(this.AuditEnvironment.PathSeparator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+        string[] pc = path.Split(PathSeparator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
         string wildcard = "*";
         string search_path;
         if (pc.Last().Contains("*"))
         {
             wildcard = pc.Last();
-            search_path = pc.Length > 1 ? pc.Take(pc.Length - 1).Aggregate((s1, s2) => s1 + this.AuditEnvironment.PathSeparator + s2) : string.Empty;    
+            search_path = pc.Length > 1 ? pc.Take(pc.Length - 1).Aggregate((s1, s2) => s1 + PathSeparator + s2) : string.Empty;    
         }
         else
         {

@@ -158,8 +158,8 @@ public class SshAuditFileInfo : AuditFileInfo
     public override LocalAuditFileInfo GetAsLocalFile()
     {
         CallerInformation caller = this.AuditEnvironment.Here();
-        List<string> components = this.Directory.FullName.Split(this.AuditEnvironment.PathSeparator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries).ToList() ;
-        components.RemoveAll(c => c.Contains(this.AuditEnvironment.PathSeparator) || c.Contains(":")); //Remove any drive or device parts
+        List<string> components = this.Directory.FullName.Split(PathSeparator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries).ToList() ;
+        components.RemoveAll(c => c.Contains(PathSeparator) || c.Contains(":")); //Remove any drive or device parts
         DirectoryInfo parent = this.AuditEnvironment.WorkDirectory ?? throw new InvalidOperationException("SSH audit environment work directory is null.");
         if (components.Count > 1)
         {

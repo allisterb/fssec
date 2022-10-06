@@ -18,16 +18,6 @@ public abstract class AuditEnvironment : Runtime, IDisposable
     public AuditEnvironment(EventHandler<EnvironmentEventArgs>? message_handler, OperatingSystem os, LocalEnvironment? host_environment) : base()
     {
         this.OS = os;
-        if (OS.Platform == PlatformID.Win32NT)
-        {
-            this.LineTerminator = "\r\n";
-            this.PathSeparator = "\\";
-        }
-        else
-        {
-            this.LineTerminator = "\n";
-            this.PathSeparator = "/";
-        }
         this.MessageHandler = message_handler;
         this.HostEnvironment = host_environment;
     }
@@ -96,8 +86,6 @@ public abstract class AuditEnvironment : Runtime, IDisposable
         get => Type.GetType("Mono.Runtime") != null;
     }
 
-    public string PathSeparator { get; protected set; } = string.Empty;
-
     public string ProcessOutput
     {
         get
@@ -123,8 +111,6 @@ public abstract class AuditEnvironment : Runtime, IDisposable
     protected StringBuilder ProcessOutputSB = new StringBuilder();
 
     protected StringBuilder ProcessErrorSB = new StringBuilder();
-
-    protected string LineTerminator { get; set; }
 
     #endregion
 
@@ -454,7 +440,7 @@ public abstract class AuditEnvironment : Runtime, IDisposable
             }
             else
             {
-                string[] error = output.Split(this.LineTerminator.ToCharArray());
+                string[] error = output.Split(LineTerminator.ToCharArray());
                 if (error.All(e => e.EndsWith("Permission denied")))
                 {
                     Debug(here, "FindFiles({0}, {1}) returned empty.", path, pattern);
